@@ -1,0 +1,8 @@
+.gitignore
+.vsix-build/**
+src/**
+test/**
+scripts/**
+tsconfig.json
+*.vsix
+**/*.map

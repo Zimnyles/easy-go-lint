@@ -1,0 +1,185 @@
+{
+  "name": "easy-go-lint",
+  "displayName": "Easy Go Lint",
+  "description": "Удобный запуск golangci-lint для Go-файлов и проектов прямо в VS Code.",
+  "version": "2.4.2",
+  "publisher": "easy-go-lint-local",
+  "license": "MIT",
+  "preview": true,
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "extensionKind": [
+    "workspace"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "Easy Go Lint запускает Go toolchain и golangci-lint для файлов открытого проекта."
+    },
+    "virtualWorkspaces": {
+      "supported": false,
+      "description": "Для анализа требуется локальная или удалённая файловая система и Go toolchain."
+    }
+  },
+  "categories": [
+    "Linters",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "go",
+    "golang",
+    "linter",
+    "cursor"
+  ],
+  "main": "./dist/src/extension.js",
+  "activationEvents": [
+    "onCommand:goLinter.open",
+    "onCommand:goLinter.lintCurrentFile",
+    "onCommand:goLinter.lintWorkspace",
+    "onCommand:goLinter.fixCurrentFile",
+    "onView:goLinter.sidebar"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "goLinter",
+          "title": "Easy Go Lint",
+          "icon": "media/go-linter.svg"
+        }
+      ]
+    },
+    "views": {
+      "goLinter": [
+        {
+          "id": "goLinter.sidebar",
+          "name": "Easy Go Lint",
+          "type": "webview"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "goLinter.open",
+        "title": "Go Linter: Open",
+        "category": "Go Linter"
+      },
+      {
+        "command": "goLinter.lintCurrentFile",
+        "title": "Go Linter: Lint Current File",
+        "shortTitle": "Lint",
+        "category": "Go Linter",
+        "icon": "$(checklist)",
+        "enablement": "resourceLangId == go && !goLinter.running"
+      },
+      {
+        "command": "goLinter.lintWorkspace",
+        "title": "Go Linter: Lint Project",
+        "shortTitle": "Lint Project",
+        "category": "Go Linter",
+        "icon": "$(folder-active)",
+        "enablement": "!goLinter.running"
+      },
+      {
+        "command": "goLinter.fixCurrentFile",
+        "title": "Go Linter: Fix Current File",
+        "shortTitle": "Quick Fix",
+        "category": "Go Linter",
+        "icon": "$(wrench)",
+        "enablement": "resourceLangId == go && !goLinter.running"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "goLinter.lintCurrentFile",
+          "when": "resourceLangId == go",
+          "group": "navigation@1"
+        },
+        {
+          "command": "goLinter.fixCurrentFile",
+          "when": "resourceLangId == go",
+          "group": "navigation@2"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Go Linter",
+      "properties": {
+        "goLinter.golangciLintPath": {
+          "type": "string",
+          "default": "",
+          "scope": "resource",
+          "description": "Необязательный путь к golangci-lint. По умолчанию используется встроенная сборка с исправлениями совместимости Go 1.27."
+        },
+        "goLinter.goToolchain": {
+          "type": "string",
+          "default": "auto",
+          "scope": "resource",
+          "description": "Go toolchain для golangci-lint. Значение auto использует установленный Go и автоматически выбирает более новый toolchain по go.mod, если это разрешено настройками Go."
+        },
+        "goLinter.timeoutSeconds": {
+          "type": "number",
+          "default": 300,
+          "minimum": 10,
+          "maximum": 1800,
+          "scope": "resource",
+          "description": "Максимальная длительность одного запуска golangci-lint в секундах."
+        },
+        "goLinter.language": {
+          "type": "string",
+          "enum": [
+            "ru",
+            "en"
+          ],
+          "enumDescriptions": [
+            "Русский",
+            "English"
+          ],
+          "default": "ru",
+          "scope": "application",
+          "description": "Язык интерфейса и сообщений Easy Go Lint."
+        },
+        "goLinter.showResultsInOutput": {
+          "type": "boolean",
+          "default": true,
+          "scope": "application",
+          "description": "Показывать результат Lint в нижней панели Output → Go Linter."
+        },
+        "goLinter.showResultsInDashboard": {
+          "type": "boolean",
+          "default": false,
+          "scope": "application",
+          "description": "Показывать результат Lint внутри окна Easy Go Lint."
+        }
+      }
+    },
+    "jsonValidation": [
+      {
+        "fileMatch": [
+          "*.golangci.json"
+        ],
+        "url": "./schemas/golangci.jsonschema.json"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "node scripts/clean-dist.js && tsc -p .",
+    "build:golangci": "node scripts/build-golangci.js",
+    "verify:binaries": "node scripts/verify-golangci-binaries.js",
+    "test": "npm run compile && node --test dist/test/*.test.js && npm run verify:binaries && node scripts/integration-test.js",
+    "package": "npm run compile && node scripts/package.js",
+    "package:platforms": "npm run compile && node scripts/package-platforms.js",
+    "clean": "node scripts/clean.js"
+  },
+  "devDependencies": {
+    "@types/node": "20.19.43",
+    "@types/vscode": "1.90.0",
+    "@vscode/vsce": "3.9.2",
+    "typescript": "5.9.3"
+  },
+  "dependencies": {
+    "yaml": "2.8.3"
+  }
+}

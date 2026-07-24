@@ -1,0 +1,14 @@
+version: "2"
+run:
+  tests: false
+linters:
+  default: none
+  enable:
+    - forbidigo
+    - govet
+    - staticcheck
+  settings:
+    forbidigo:
+      forbid:
+        - pattern: ^fmt\.Print.*$
+          msg: use a logger
