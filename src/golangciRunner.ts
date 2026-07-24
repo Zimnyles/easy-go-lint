@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'node:path';
-import * as os from 'node:os';
+import * as fs from 'node:fs/promises';
 import {
   CatalogItem,
   GolangciIssue,
@@ -25,6 +25,7 @@ import {
   executeFile,
   ProcessResult
 } from './processRunner';
+import { lintOutputArguments } from './lintOutput';
 
 export { isProcessCancelled } from './processRunner';
 
@@ -253,9 +254,15 @@ export class GolangciRunner {
     token?: vscode.CancellationToken
   ): Promise<GolangciLintResult> {
     await this.ensureRuntimeDirectories();
+    const resultId =
+      `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const outputUri = vscode.Uri.joinPath(
       this.cacheRoot,
-      `result-${Date.now()}-${Math.random().toString(36).slice(2)}.json`
+      `result-${resultId}.json`
+    );
+    const textOutputUri = vscode.Uri.joinPath(
+      this.cacheRoot,
+      `result-${resultId}.txt`
     );
     try {
       return await this.withEffectiveProfile(
@@ -269,8 +276,10 @@ export class GolangciRunner {
               effectiveUri.fsPath,
               '--path-mode=abs',
               '--show-stats=false',
-              `--output.text.path=${os.devNull}`,
-              `--output.json.path=${outputUri.fsPath}`,
+              ...lintOutputArguments(
+                textOutputUri.fsPath,
+                outputUri.fsPath
+              ),
               '--max-issues-per-linter=0',
               '--max-same-issues=0',
               '--uniq-by-line=false',
@@ -301,7 +310,10 @@ export class GolangciRunner {
         }
       );
     } finally {
-      await deleteIfExists(outputUri);
+      await Promise.all([
+        deleteIfExists(outputUri),
+        deleteIfExists(textOutputUri)
+      ]);
     }
   }
 
@@ -434,7 +446,7 @@ export function parseGolangciOutput(stdout: string): GolangciOutput {
 
 async function readGolangciOutput(uri: vscode.Uri): Promise<GolangciOutput> {
   try {
-    const bytes = await vscode.workspace.fs.readFile(uri);
+    const bytes = await fs.readFile(uri.fsPath);
     return parseGolangciOutput(new TextDecoder().decode(bytes));
   } catch (error) {
     if (isMissingFileError(error)) {
@@ -461,20 +473,19 @@ function cleanCliError(value: string): string {
 }
 
 async function deleteIfExists(uri: vscode.Uri): Promise<void> {
-  try {
-    await vscode.workspace.fs.delete(uri, {
-      recursive: false,
-      useTrash: false
-    });
-  } catch (error) {
-    if (!isMissingFileError(error)) {
-      throw error;
-    }
-  }
+  await fs.rm(uri.fsPath, {
+    force: true
+  });
 }
 
 function isMissingFileError(error: unknown): boolean {
-  return /not found|enoent|FileNotFound/iu.test(toMessage(error));
+  const code = typeof error === 'object' && error !== null &&
+    'code' in error
+    ? String((error as { code?: unknown }).code)
+    : '';
+  return code === 'FileNotFound' ||
+    code === 'ENOENT' ||
+    /not found|enoent|FileNotFound/iu.test(toMessage(error));
 }
 
 function clamp(value: number, minimum: number, maximum: number): number {

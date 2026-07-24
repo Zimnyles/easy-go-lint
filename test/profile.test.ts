@@ -30,6 +30,7 @@ import {
   executeFile,
   ProcessCancelledError
 } from '../src/processRunner';
+import { lintOutputArguments } from '../src/lintOutput';
 
 test('default profile serializes as golangci-lint v2 YAML', () => {
   const profile = createDefaultProfile();
@@ -277,6 +278,19 @@ test('bundles native golangci-lint for all Cursor desktop platforms', () => {
     fileName: 'golangci-lint'
   });
   assert.equal(bundledBinaryFor('freebsd', 'x64'), undefined);
+});
+
+test('uses regular output files instead of the Windows null device', () => {
+  const args = lintOutputArguments(
+    'C:\\Users\\tester\\result-1.txt',
+    'C:\\Users\\tester\\result-1.json'
+  );
+
+  assert.deepEqual(args, [
+    '--output.text.path=C:\\Users\\tester\\result-1.txt',
+    '--output.json.path=C:\\Users\\tester\\result-1.json'
+  ]);
+  assert.ok(args.every((argument) => !argument.includes('\\\\.\\nul')));
 });
 
 test('process runner cancels a running child process', async () => {
