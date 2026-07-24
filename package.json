@@ -3,7 +3,7 @@
   "displayName": "Easy Go Lint",
   "description": "Удобный запуск golangci-lint для Go-файлов и проектов прямо в VS Code.",
   "version": "2.4.2",
-  "publisher": "easy-go-lint-local",
+  "publisher": "dmitrii-telianov",
   "license": "MIT",
   "preview": true,
   "engines": {
